@@ -1,11 +1,10 @@
-FROM python:3.10-slim
-
-RUN apt-get update && apt-get install -y \
-    git g++ make wget pkg-config libsox-dev ffmpeg && \
-    pip install libretranslate==1.3.11 gunicorn && \
-    rm -rf /var/lib/apt/lists/*
+FROM libretranslate/libretranslate:latest
 
 EXPOSE 8080
 
-# Gunicorn запускає Flask-додаток через головну функцію
-CMD ["gunicorn", "--bind", "0.0.0.0:8080", "libretranslate.app:create_app()"]
+ENV LT_HOST=0.0.0.0
+ENV LT_PORT=8080
+ENV LT_LOAD_ONLY=en,uk
+ENV LT_REQ_LIMIT=0
+
+CMD ["libretranslate", "--host", "0.0.0.0", "--port", "8080", "--load-only", "en,uk", "--req-limit", "0"]
