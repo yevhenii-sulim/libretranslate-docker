@@ -12,23 +12,24 @@
 # ENV PATH="$PATH:/home/libretranslate/.local/bin"
 # CMD ["gunicorn", "--bind", "0.0.0.0:5000", "libretranslate.wsgi:app"]
 
-FROM python:3.9-slim
+# syntax=docker/dockerfile:1
+FROM python:3.10-slim
 
-# Системні залежності
+# Системні залежності (мінімальний набір для компіляції LTpycld2)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    git g++ make wget pkg-config libsox-dev ffmpeg ca-certificates && \
+    g++ make wget curl pkg-config libffi-dev libsox-dev ffmpeg ca-certificates && \
     rm -rf /var/lib/apt/lists/*
 
-# Встановлюємо pip і залежності
+# Встановлюємо pip, setuptools, wheel
 RUN pip install --no-cache-dir -U pip setuptools wheel
 
-# Встановлюємо libretranslate та gunicorn
-RUN pip install --no-cache-dir libretranslate==1.3.11 gunicorn
+# Встановлюємо LibreTranslate (без зайвих фреймворків)
+RUN CFLAGS="-Wno-narrowing" pip install --no-cache-dir libretranslate==1.3.11 gunicorn
 
 # Завантажуємо лише потрібні моделі
 RUN libretranslate --update-models --load-only en,uk || true
 
-# Експортуємо порт і середовище
+# Налаштування середовища
 ENV LT_HOST=0.0.0.0
 ENV LT_PORT=5000
 ENV LT_LOAD_ONLY=en,uk
@@ -37,5 +38,5 @@ ENV LT_DISABLE_FILES=true
 
 EXPOSE 5000
 
-# Запуск через gunicorn
+# Запускаємо через gunicorn (WSGI)
 CMD ["gunicorn", "--bind", "0.0.0.0:5000", "libretranslate.app:create_app()"]
