@@ -1,18 +1,35 @@
-FROM python:3.10-slim
+# FROM libretranslate/libretranslate:latest
+# RUN pip install --no-cache-dir gunicorn
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    git build-essential wget curl pkg-config libsox-dev ffmpeg ca-certificates && \
-    rm -rf /var/lib/apt/lists/*
+# EXPOSE 5000
 
-RUN pip install --no-cache-dir libretranslate==1.3.11 gunicorn
+# ENV LT_HOST=0.0.0.0
+# ENV LT_PORT=5000
+# ENV LT_LOAD_ONLY=en,uk
+# ENV LT_REQ_LIMIT=0
+# ENV LT_DISABLE_FILES=true
 
+# ENV PATH="$PATH:/home/libretranslate/.local/bin"
+# CMD ["gunicorn", "--bind", "0.0.0.0:5000", "libretranslate.wsgi:app"]
+
+
+FROM libretranslate/libretranslate:latest
+
+# Встановлюємо gunicorn (іноді потрібен окремо)
+RUN pip install --no-cache-dir gunicorn
+
+# Попередньо завантажуємо лише потрібні моделі
+RUN libretranslate --update-models --load-only en,uk || true
+
+# Експортуємо порт
+EXPOSE 5000
+
+# Налаштування середовища
 ENV LT_HOST=0.0.0.0
 ENV LT_PORT=5000
 ENV LT_LOAD_ONLY=en,uk
 ENV LT_REQ_LIMIT=0
 ENV LT_DISABLE_FILES=true
-ENV PYTHONUNBUFFERED=1
 
-EXPOSE 5000
-
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "libretranslate.app:create_app()"]
+# Запуск через gunicorn
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "libretranslate.wsgi:app"]
