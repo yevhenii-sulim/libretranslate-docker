@@ -1,10 +1,6 @@
-FROM python:3.9-slim
+FROM libretranslate/libretranslate:latest
 
-RUN apt-get update && apt-get install -y \
-    git g++ make wget pkg-config libsox-dev ffmpeg && \
-    pip install --upgrade pip setuptools wheel && \
-    pip install LTpycld2==0.2.10 libretranslate==1.3.11 gunicorn && \
-    rm -rf /var/lib/apt/lists/*
+RUN pip install --no-cache-dir gunicorn
 
 EXPOSE 5000
 
@@ -13,4 +9,8 @@ ENV LT_PORT=5000
 ENV LT_LOAD_ONLY=en,uk
 ENV LT_REQ_LIMIT=0
 
+# скидаємо старий entrypoint
+ENTRYPOINT []
+
+# тепер команда запуску через gunicorn
 CMD ["gunicorn", "--bind", "0.0.0.0:5000", "libretranslate.wsgi:app"]
